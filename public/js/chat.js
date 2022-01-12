@@ -131,6 +131,12 @@ $(() => {
         addMessage(message)
         updateUserList()
     })
+    socket.on('user_left', (data) => {
+        users = data.users
+        let message = data.user.name + 'が退出しました'
+        addMessage(message)
+        updateUserList()
+    })
 
     //message 受信
     socket.on('message', (data) => {
@@ -164,7 +170,33 @@ $(() => {
         stampList.toggle()
     })
 
+    $('.uploadStamp').on('click', (event) => {
+        console.log('upload stamp!!')
+        const mime_type = 'image/png'
+        const image = new Image()
+        //選択した画像(image)のパスをとる
+        image.src = $(event.target).attr('src')
+        image.onload = (e) => {
+            const canvas = document.createElement('canvas')
+            canvas.width = image.naturalWidth
+            canvas.height = image.naturalHeight
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(image, 0, 0)
+            //画像をエンコーディング
+            const base64 = canvas.toDataURL(mime_type)
+            const data = { user: user, image: base64}
+
+            socket.emit('upload_stamp', data)
+        }
+    })
+
+    socket.on('load_stamp', (data) => {
+        createChatImage(data, { width: STAMP_WIDTH})
+    })
+
     $('#logout').on('click', () => {
+        socket.emit('logout')
+        user = {}
         chatArea.hide()
         loginArea.fadeIn(FADE_TIME)
     })
